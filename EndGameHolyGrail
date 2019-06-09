@@ -33,7 +33,7 @@ namespace cAlgo.Robots
         public int StopLossInPips { get; set; }
 
 
-        [Parameter("Take Profit (pips)", DefaultValue = 12)]
+        [Parameter("Take Profit (pips)", DefaultValue = 500)]
         public int TakeProfitInPips { get; set; }
 
 
@@ -46,11 +46,11 @@ namespace cAlgo.Robots
         public int Volume { get; set; }
 
 
-        [Parameter("Nuke Allowance", DefaultValue = -12)]
+        [Parameter("Nuke Allowance", DefaultValue = -10)]
         public double NukeAllowance { get; set; }
 
 
-        [Parameter("Last Nuke Allowance", DefaultValue = -12)]
+        [Parameter("Last Nuke Allowance", DefaultValue = -10)]
         public double LastNukeAllowance { get; set; }
 
 
