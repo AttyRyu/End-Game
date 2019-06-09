@@ -27,7 +27,7 @@ namespace cAlgo
         public const string DayHighName = "DayHigh";
         public const string DayLowName = "DayLow";
 
-        [Parameter("Periods", DefaultValue = 100)]
+        [Parameter("Periods", DefaultValue = 1000)]
         public int Periods { get; set; }
 
         [Parameter("Show Extreme H/L", DefaultValue = true)]
@@ -36,13 +36,13 @@ namespace cAlgo
         [Parameter("Show Day H/L", DefaultValue = true)]
         public bool ShowDayHL { get; set; }
 
-        [Parameter("Required Hits", DefaultValue = 5)]
+        [Parameter("Required Hits", DefaultValue = 1)]
         public int RequiredHits { get; set; }
 
-        [Parameter("Zone Size", DefaultValue = 10)]
+        [Parameter("Zone Size", DefaultValue = 33)]
         public int ZoneSize { get; set; }
 
-        [Parameter("Max Lines In Zone", DefaultValue = 3)]
+        [Parameter("Max Lines In Zone", DefaultValue = 1)]
         public int MaxLinesInZone { get; set; }
 
         [Output("Extreme H/L Style", Color = Colors.Red, LineStyle = LineStyle.DotsVeryRare)]
@@ -121,7 +121,7 @@ namespace cAlgo
 
 
 
-                using (StreamWriter outputFile = new StreamWriter("C:/Users/trader/Desktop/DaveCBot Log/results.log"))
+                using (StreamWriter outputFile = new StreamWriter("C:/Users/asus/Desktop/EndGame/results.log"))
                 {
 
                     foreach (var itm in myStack)
