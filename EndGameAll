@@ -1,0 +1,760 @@
+using System;
+using System.Linq;
+using cAlgo.API;
+using cAlgo.API.Indicators;
+using cAlgo.API.Internals;
+using cAlgo.Indicators;
+using System.Collections;
+using System.IO;
+
+
+namespace cAlgo.Robots
+{
+    [Robot(TimeZone = TimeZones.SingaporeStandardTime, AccessRights = AccessRights.FullAccess)]
+    public class EndGamewithUnholyGrail : Robot
+    {
+        [Parameter("ATR  D1 Period", DefaultValue = 30)]
+        public int ATRD1Periods { get; set; }
+
+
+        [Parameter("ATR  H12 Period", DefaultValue = 60)]
+        public int ATRH12Periods { get; set; }
+
+
+        [Parameter("ATR  H4 Period", DefaultValue = 60)]
+        public int ATRH4Periods { get; set; }
+
+
+        [Parameter("ATR  H1 Period", DefaultValue = 1200)]
+        public int ATRH1Periods { get; set; }
+
+
+        [Parameter("Stop Loss (pips)", DefaultValue = 40000)]
+        public int StopLossInPips { get; set; }
+
+
+        [Parameter("Stop Loss to Nuke (negative pips)", DefaultValue = -70)]
+        public int StopLosstoNuke { get; set; }
+
+
+        [Parameter("Back-up Nuke (negative pips)", DefaultValue = -70)]
+        public int BackupNuke { get; set; }
+
+
+        [Parameter("Take Profit (pips)", DefaultValue = 12)]
+        public int TakeProfitInPips { get; set; }
+
+
+        [Parameter("Limit Range", DefaultValue = 3)]
+        public int LimitRange { get; set; }
+
+
+        [Parameter("How Many Waves?", DefaultValue = 5)]
+        public int Waves { get; set; }
+
+
+        [Parameter("SL Trigger Pips", DefaultValue = 100)]
+        public int WaveInterval { get; set; }
+
+
+        [Parameter("Protective SL Add Pips", DefaultValue = 100)]
+        public int PSLAddPips { get; set; }
+
+
+        [Parameter("Volume", DefaultValue = 5000)]
+        //5K every 1K one pair only
+        public int Volume { get; set; }
+
+
+        [Parameter("Wave Pip Interval 1", DefaultValue = 15)]
+        public int WaveInterval1 { get; set; }
+
+
+        [Parameter("Wave Allowance", DefaultValue = -16)]
+        public int WaveAllowance { get; set; }
+
+
+        [Parameter("First Nuke TP", DefaultValue = 30)]
+        public double FirstNukeTP { get; set; }
+
+
+        [Parameter("Nuke Allowance", DefaultValue = 5)]
+        public double NukeAllowance { get; set; }
+
+
+        [Parameter("Last Nuke Allowance", DefaultValue = 10)]
+        public double LastNukeAllowance { get; set; }
+
+
+        [Parameter("Volume Multiplier", DefaultValue = 16)]
+        public int VolumeMultiplier { get; set; }
+
+
+        [Parameter("Limit Volume Multiplier", DefaultValue = 16)]
+        public int LimitVolumeMultiplier { get; set; }
+
+
+        [Parameter("Stop Out Percent", DefaultValue = 50)]
+        public int StopOutPercent { get; set; }
+
+
+        [Parameter("Max Short Trades", DefaultValue = 5, MinValue = 0)]
+        public int MaxShortTrades { get; set; }
+
+
+        [Parameter("Max Long Trades", DefaultValue = 5, MinValue = 0)]
+        public int MaxLongTrades { get; set; }
+
+
+        //indicator parameters
+        [Parameter("Periods", DefaultValue = 10000)]
+        public int Periods { get; set; }
+
+
+        [Parameter("Show Extreme H/L", DefaultValue = true)]
+        public bool ShowExtremeHL { get; set; }
+
+
+        [Parameter("Show Day H/L", DefaultValue = true)]
+        public bool ShowDayHL { get; set; }
+
+
+        [Parameter("Required Hits", DefaultValue = 1)]
+        public int RequiredHits { get; set; }
+
+
+        [Parameter("Zone Size", DefaultValue = 33)]
+        public int ZoneSize { get; set; }
+
+
+        [Parameter("Max Lines In Zone", DefaultValue = 1)]
+        public int MaxLinesInZone { get; set; }
+
+
+        private SRAtPrice SRAt;
+
+
+        public double ATRDays(int atr_period)
+        {
+            MarketSeries D1Series;
+            D1Series = MarketData.GetSeries(TimeFrame.Daily);
+            double range_atr_d1 = 0;
+            double Ra_D1 = 0;
+            int RaP_D1 = atr_period;
+            for (int i = 0; i < RaP_D1; i++)
+            {
+                Ra_D1 = Ra_D1 + (D1Series.High.Last(i) - D1Series.Low.Last(i)) / Symbol.PipSize;
+            }
+            Ra_D1 = ((Ra_D1 / RaP_D1) + 1);
+            //Add "1" to balance excessive rounding down  
+            return range_atr_d1 = Ra_D1;
+        }
+        public double ATR_H12(int atr_period)
+        {
+            MarketSeries H12Series;
+            H12Series = MarketData.GetSeries(TimeFrame.Hour12);
+            double range_atr_h12 = 0;
+            double Ra_H12 = 0;
+            int RaP_H12 = atr_period;
+            for (int i = 0; i < RaP_H12; i++)
+            {
+                Ra_H12 = Ra_H12 + (H12Series.High.Last(i) - H12Series.Low.Last(i)) / Symbol.PipSize;
+            }
+            Ra_H12 = ((Ra_H12 / RaP_H12) + 1);
+            //Add "1" to balance excessive rounding down  
+            return range_atr_h12 = Ra_H12;
+        }
+        public double ATR_H4(int atr_period)
+        {
+            MarketSeries H4Series;
+            H4Series = MarketData.GetSeries(TimeFrame.Hour4);
+            double range_atr_h4 = 0;
+            double Ra_H4 = 0;
+            int RaP_H4 = atr_period;
+            for (int i = 0; i < RaP_H4; i++)
+            {
+                Ra_H4 = Ra_H4 + (H4Series.High.Last(i) - H4Series.Low.Last(i)) / Symbol.PipSize;
+            }
+            Ra_H4 = ((Ra_H4 / RaP_H4) + 1);
+            //Add "1" to balance excessive rounding down  
+            return range_atr_h4 = Ra_H4;
+        }
+        public double ATR_H1(int atr_period)
+        {
+            MarketSeries H1Series;
+            H1Series = MarketData.GetSeries(TimeFrame.Hour);
+            double range_atr_h1 = 0;
+            double Ra_H1 = 0;
+            int RaP_H1 = atr_period;
+            for (int i = 0; i < RaP_H1; i++)
+            {
+                Ra_H1 = Ra_H1 + (H1Series.High.Last(i) - H1Series.Low.Last(i)) / Symbol.PipSize;
+            }
+            Ra_H1 = ((Ra_H1 / RaP_H1) + 1);
+            //Add "1" to balance excessive rounding down  
+            return range_atr_h1 = Ra_H1;
+        }
+        //end of indicator parameters
+
+        protected override void OnStart()
+        {
+            SRAt = Indicators.GetIndicator<SRAtPrice>(Periods, ShowExtremeHL, ShowDayHL, RequiredHits, ZoneSize, MaxLinesInZone);
+
+            //Nuking Reference
+            Positions.Closed += OnPositionsClosed;
+            //End of Nuking Reference
+        }
+
+
+        protected override void OnBar()
+        {
+            //string[] labels;
+            //// Intialization of array
+            //labels = new string[8] 
+            //{
+            //    "",
+            //    "Nuclear",
+            //    "Nuclear2",
+            //    "Nuclear3",
+            //    "Nuclear4",
+            //    "Nuclear5",
+            //    "Nuclear6",
+            //    "Nuclear7"
+            //};
+            //foreach (string label in labels)
+            //{
+            //    var longPosition = Positions.FindAll(label, Symbol, TradeType.Buy);
+            //    var shortPosition = Positions.FindAll(label, Symbol, TradeType.Sell);
+            //    {
+            //
+            //
+            //
+            //        //unholy grail with constant refresh
+            //        //if (((longPosition.Length <= MaxLongTrades) || (shortPosition.Length <= MaxShortTrades)) && ((Server.Time.Hour == 14) && (Server.Time.Minute == 0) && (Server.Time.Second == 0)))
+            //        //{
+            //        //    CancelPendingOrders();
+            //        //    CreateWaves1(TradeType.Buy);
+            //        //    CreateWaves1(TradeType.Sell);
+            //        //    Print("Refresh");
+            //        //    break;
+            //        //}
+            //        //end of unholy grail with constant refresh
+            //
+            //        //holy grail
+            //        //if ((longPosition.Length <= MaxLongTrades) && (shortPosition.Length <= MaxShortTrades) && (Symbol.Spread/Symbol.PipSize < LimitRange / 2))
+            //        //if ((Positions.Find("label", Symbol, TradeType.Buy) == null) && (Positions.Find("label", Symbol, TradeType.Sell) == null) && (Symbol.Spread/Symbol.PipSize < LimitRange / 2))
+            //
+
+            if ((Positions.Find("", Symbol, TradeType.Buy) == null) && (Positions.Find("", Symbol, TradeType.Sell) == null) && (Server.Time.Hour == 7) && (Symbol.Spread / Symbol.PipSize < LimitRange / 3))
+            {
+                CancelPendingOrders();
+                CreateWaves1(TradeType.Buy);
+                CreateWaves1(TradeType.Sell);
+                Print("Refresh");
+
+            }
+            //        //end of holy grail
+            //    }
+            //}
+
+        }
+
+
+
+        protected override void OnTick()
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+
+            if ((Server.Time.DayOfWeek == DayOfWeek.Monday) && (Server.Time.Hour == 14) && (Server.Time.Minute == 0) && (Server.Time.Second == 0) && (Server.Time.Millisecond == 0))
+            {
+                Print("ATRd1period " + ATRd1period);
+                Print("ATRh12period " + ATRh12period);
+                Print("ATRh4period " + ATRh4period);
+                Print("ATRh1period " + ATRh1period);
+            }
+            //END OF ATR Declarations
+
+            //Game22
+            //if ((Positions.Find("", Symbol, TradeType.Buy) == null) && (Positions.Find("", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Sell) == null) && (Symbol.Spread / Symbol.PipSize < LimitRange / 2))
+            //{
+            //    CancelPendingOrders();
+            //    CreateWaves1(TradeType.Buy);
+            //    CreateWaves1(TradeType.Sell);
+            //    Print("Refresh");
+            //}
+            //End of Game22            
+
+            //if ((Positions.Find("", Symbol, TradeType.Buy) == null) && (Positions.Find("", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Sell) == null) && (Symbol.Spread / Symbol.PipSize < LimitRange / 2))
+            //{
+            //    CancelPendingOrders();
+            //    CreateWaves1(TradeType.Buy);
+            //    CreateWaves1(TradeType.Sell);
+            //    Print("Refresh");
+            //}
+
+            // Declaration of the array
+            string[] labels;
+            // Intialization of array
+            labels = new string[8] 
+            {
+                "",
+                "Nuclear",
+                "Nuclear2",
+                "Nuclear3",
+                "Nuclear4",
+                "Nuclear5",
+                "Nuclear6",
+                "Nuclear7"
+            };
+            foreach (string label in labels)
+            {
+                var longPosition = Positions.FindAll(label, Symbol, TradeType.Buy);
+                var shortPosition = Positions.FindAll(label, Symbol, TradeType.Sell);
+                {
+                    //Game22 Constant Refresh with Limit on Positions
+                    // if (((longPosition.Length <= MaxLongTrades) || (shortPosition.Length <= MaxShortTrades)) && ((Server.Time.Hour == 9) && (Server.Time.Minute == 0) && (Server.Time.Second == 0)))
+                    // {
+                    //     CancelPendingOrders();
+                    //     CreateWaves1(TradeType.Buy);
+                    //     CreateWaves1(TradeType.Sell);
+                    //     Print("Refresh");
+                    // }
+                    //End of Game22 Constant Refresh with Limit on Positions
+                }
+            }
+
+            //nuking at key zone, buy first
+            double upmin;
+            double upmax;
+            double up;
+            int counter = 0;
+            string line;
+
+
+            using (StreamReader sr = new StreamReader("C:/Users/trader/Desktop/DaveCBot Log/results.log"))
+            {
+                while ((line = sr.ReadLine()) != null)
+                {
+                    upmin = 0;
+                    upmax = 0;
+                    up = 0;
+                    up = Convert.ToDouble(line);
+                    upmin = up - 0.00025;
+                    upmax = up + 0.00025;
+                    foreach (var position in Positions)
+                    {
+                        if ((position.Pips <= ATRh12period * -1) && (Symbol.Ask >= upmin && Symbol.Ask <= upmax) && (position.TradeType == TradeType.Buy) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        {
+                            ClosePosition(position);
+                            Print("CloseKeyZone");
+                        }
+                        if ((position.Pips <= ATRh12period * -1) && (Symbol.Bid >= upmin && Symbol.Bid <= upmax) && (position.TradeType == TradeType.Sell) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        {
+                            ClosePosition(position);
+                            Print("CloseKeyZone");
+                        }
+                        if ((position.Pips <= ATRd1period * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        {
+                            ClosePosition(position);
+                            Print("BackupClose");
+                        }
+                        if ((position.Pips <= ATRd1period * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        {
+                            ClosePosition(position);
+                            Print("BackupClose");
+                        }
+                        //if ((position.Pips >= ATRh12period - Symbol.Spread) && (Symbol.Ask >= upmin && Symbol.Ask <= upmax) && (position.TradeType == TradeType.Buy) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("CloseKeyZone");
+                        //}
+                        //if ((position.Pips >= ATRh12period - Symbol.Spread) && (Symbol.Bid >= upmin && Symbol.Bid <= upmax) && (position.TradeType == TradeType.Sell) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("CloseKeyZone");
+                        //}
+                        //if ((position.Pips >= ATRd1period - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("BackupClose");
+                        //}
+                        //if ((position.Pips >= ATRd1period - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("BackupClose");
+                        //}
+                    }
+                    counter++;
+                }
+                //end of nuking at key zone
+
+
+                //Margin Level Stop-Out
+                while (Account.MarginLevel <= StopOutPercent)
+                {
+                    ClosePosition(Positions.OrderByDescending(x => x.GrossProfit).Last());
+                    CancelPendingOrders();
+                    Print("Closed due to Lack of Margin");
+                }
+                //end ofMargin Level Stop-Out
+
+                //Jumping Stop Loss
+                // foreach (Position OpenPosition in Positions.FindAll("", Symbol))
+                // {
+                //     double ProtectiveStopPrice = GetProtectiveStopPrice(OpenPosition);
+                //
+                //
+                //     if (ProtectiveStopPrice > 0)
+                //     {
+                //         Print("Moved ProtectiveStopLoss to: " + ProtectiveStopPrice);
+                //         ModifyPosition(OpenPosition, ProtectiveStopPrice, OpenPosition.TakeProfit);
+                //     }
+                // }
+                //End of Jumping Stop Loss
+            }
+        }
+
+
+        //waves
+        private void CreateWaves1(TradeType type)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+
+            double TargetPrice = type == TradeType.Buy ? Symbol.Ask : Symbol.Bid;
+            double TargetPrice1 = type == TradeType.Buy ? Symbol.Ask : Symbol.Bid;
+
+            //Original Rael Code
+            // for (int i = 0; i < Waves; i++)
+            // {
+            //     TargetPrice = type == TradeType.Buy ? TargetPrice + WaveInterval1 * Symbol.PipSize : TargetPrice - WaveInterval1 * Symbol.PipSize;
+            //     TargetPrice1 = type == TradeType.Buy ? TargetPrice + WaveAllowance * Symbol.PipSize : TargetPrice - WaveAllowance * Symbol.PipSize;
+            //     PlaceStopLimitOrderAsync(type, Symbol, Volume, TargetPrice1, LimitRange, "", ATRd1period * 5, TakeProfitInPips, null);
+            // }
+            //End of Original Rael Code
+
+            //ATR-based             
+            for (int i = 0; i < (Math.Round(ATRh12period / (ATRh1period + Math.Round((Symbol.Spread / Symbol.PipSize) * 5)))); i++)
+            {
+                TargetPrice = type == TradeType.Buy ? TargetPrice + ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 5))) : TargetPrice - ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 3)));
+                //TargetPrice1 = type == TradeType.Buy ? TargetPrice + (WaveAllowance * Symbol.PipSize + Math.Round(Symbol.Spread * 5)) : TargetPrice - (WaveAllowance * Symbol.PipSize + Math.Round(Symbol.Spread * 3));
+                //holy grail but ATR-based with no wave allowance
+                TargetPrice1 = type == TradeType.Buy ? TargetPrice - ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 5))) : TargetPrice + ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 3)));
+                //end of holy grail but ATR-based with no wave allowance
+                PlaceStopLimitOrderAsync(type, Symbol, Volume, TargetPrice1, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), "", ATRd1period * 5, ATRh1period, null);
+            }
+            //End of ATR-based
+        }
+        //end of waves
+
+        //nuking logic
+        private void ExecuteOrder1(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear", ATRd1period * 5, ATRh4period);
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder2(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear2", ATRd1period * 5, ATRh4period - NukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder3(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear3", ATRd1period * 5, ATRh4period - NukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder4(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear4", ATRd1period * 5, ATRh4period - LastNukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder5(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear5", ATRd1period * 5, ATRh4period - LastNukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder6(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear6", ATRd1period * 5, ATRh4period - LastNukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void ExecuteOrder7(double quantity, TradeType tradeType)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var volumeInUnits = Symbol.QuantityToVolumeInUnits(quantity);
+            var result = ExecuteMarketOrder(tradeType, Symbol, volumeInUnits, "Nuclear7", ATRd1period * 5, ATRh4period - LastNukeAllowance);
+
+
+            if (result.Error == ErrorCode.NoMoney)
+                Stop();
+        }
+        private void OnPositionsClosed(PositionClosedEventArgs args)
+        {
+            //ATR Declarations
+            double ATRd1period = 0;
+            double ATRh12period = 0;
+            double ATRh4period = 0;
+            double ATRh1period = 0;
+            ATRd1period = Math.Round(ATRDays(ATRD1Periods));
+            ATRh12period = Math.Round(ATR_H12(ATRH12Periods));
+            ATRh4period = Math.Round(ATR_H4(ATRH4Periods));
+            ATRh1period = Math.Round(ATR_H1(ATRH1Periods));
+            //END OF ATR Declarations
+            var position = args.Position;
+
+            if ((position.Label != "") && (position.GrossProfit > 0))
+            {
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Nuclear Holocaust Averted");
+            }
+            //if ((position.VolumeInUnits < Volume * VolumeMultiplier) && (position.GrossProfit < 0))
+            if ((position.Label == "") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder1(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol Initiated");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            //if ((position.VolumeInUnits >= Volume * VolumeMultiplier) && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            if ((position.Label == "Nuclear") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder2(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 2");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.Label == "Nuclear2") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder3(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 3");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.Label == "Nuclear3") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder4(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 4");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.Label == "Nuclear4") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder5(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 5");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.Label == "Nuclear5") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder6(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 6");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.Label == "Nuclear6") && (position.VolumeInUnits < Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                ExecuteOrder7(position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5), position.TradeType);
+                Print("Nuclear Protocol 7");
+                Print("pips " + position.Pips);
+                Print("ATRh4 " + ATRh4period);
+                Print("Multiplier " + ((position.Pips * -1) / ATRh4period) + 0.5);
+                Print("Rounded multiplier " + (Math.Round((position.Pips * -1) / ATRh4period) + 0.5));
+                Print("New Quantity " + position.Quantity * Math.Round(((position.Pips * -1) / ATRh4period) + 0.5));
+            }
+            if ((position.VolumeInUnits >= Volume * LimitVolumeMultiplier) && (position.GrossProfit < 0))
+            {
+                Print("Nuclear Protocol Halted");
+            }
+            //if ((position.VolumeInUnits > Volume) && (position.GrossProfit > 4))
+            //{
+            //    ClosePositionAsync(position);
+            //    CancelPendingOrders();
+            //    Print("WW3 Averted");
+            //}
+        }
+        //end of nuking logic
+
+
+        private void CancelPendingOrders()
+        {
+            foreach (var order in PendingOrders)
+            {
+                if (order.SymbolCode == Symbol.Code)
+                {
+                    CancelPendingOrder(order);
+                }
+            }
+        }
+
+
+        //Jumping Stop Loss
+        //private double GetProtectiveStopPrice(Position OpenPosition)
+        //{
+        //    double PipGain = OpenPosition.TradeType == TradeType.Buy ? (Symbol.Ask - OpenPosition.EntryPrice) / Symbol.PipSize : (OpenPosition.EntryPrice - Symbol.Bid) / Symbol.PipSize;
+        //    int Milestone = (int)(PipGain % WaveInterval);
+        //
+        //
+        //    for (int i = 0; i < 2 && Milestone > 0; i++)
+        //    {
+        //        if (PipGain >= WaveInterval * Milestone)
+        //        {
+        //            double ProtectiveStopSize = (((Milestone - 1) * WaveInterval) + PSLAddPips) * Symbol.PipSize;
+        //
+        //
+        //            if (OpenPosition.TradeType == TradeType.Buy)
+        //            {
+        //                double ProtectiveStopPrice = OpenPosition.EntryPrice + ProtectiveStopSize;
+        //
+        //
+        //                if (OpenPosition.StopLoss == null || OpenPosition.StopLoss < ProtectiveStopPrice)
+        //                {
+        //                    return ProtectiveStopPrice;
+        //                }
+        //            }
+        //
+        //
+        //            else if (OpenPosition.TradeType == TradeType.Sell)
+        //            {
+        //                double ProtectiveStopPrice = OpenPosition.EntryPrice - ProtectiveStopSize;
+        //
+        //
+        //                if (OpenPosition.StopLoss == null || OpenPosition.StopLoss > ProtectiveStopPrice)
+        //                {
+        //                    return ProtectiveStopPrice;
+        //                }
+        //            }
+        //        }
+        //        Milestone--;
+        //    }
+        //    return 0;
+        //}
+        //End of Jumping Stop Loss
+    }
+}
