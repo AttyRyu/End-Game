@@ -289,7 +289,7 @@ namespace cAlgo.Robots
                             ClosePosition(position);
                             Print("Hedge Buy Close");
                         }
-                        if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 2) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
+                        if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
                         {
                             ClosePosition(position);
                             Print("Hedge Sell Close");
