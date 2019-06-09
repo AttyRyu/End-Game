@@ -294,6 +294,11 @@ namespace cAlgo.Robots
                             ClosePosition(position);
                             Print("Hedge Sell Close");
                         }
+                        if (((Positions.Find("Wave 0", Symbol, TradeType.Buy) == null) || (Positions.Find("Wave 0", Symbol, TradeType.Sell) == null)) && (position.SymbolCode == Symbol.Code) && (position.Label == "Wave 0"))
+                        {
+                            ClosePosition(position);
+                            Print("Hedge Buy or Sell Close");
+                        }
                         //end of wave 0
                     }
                     counter++;
