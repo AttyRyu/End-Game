@@ -21,7 +21,7 @@ namespace cAlgo.Robots
         public int ATRH12Periods { get; set; }
 
 
-       [Parameter("ATR  H4 Period", DefaultValue = 60)]
+        [Parameter("ATR  H4 Period", DefaultValue = 60)]
         public int ATRH4Periods { get; set; }
 
 
@@ -114,7 +114,7 @@ namespace cAlgo.Robots
             MarketSeries D1Series;
             D1Series = MarketData.GetSeries(TimeFrame.Daily);
             double range_atr_d1 = 0;
-+            double Ra_D1 = 0;
+            double Ra_D1 = 0;
             int RaP_D1 = atr_period;
             for (int i = 0; i < RaP_D1; i++)
             {
@@ -284,16 +284,16 @@ namespace cAlgo.Robots
                             Print("BackupClose and RSI equals " + rsi.Result.LastValue);
                         }
                         //wave 0
-                       //if ((position.Pips >= (((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
-                       //{
-                       //    ClosePosition(position);
-                       //    Print("Hedge Buy Close");
-                       //}
-                       //if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
-                       //{
-                       //    ClosePosition(position);
-                       //    Print("Hedge Sell Close");
-                       //}
+                        //if ((position.Pips >= (((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("Hedge Buy Close");
+                        //}
+                        //if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
+                        //{
+                        //    ClosePosition(position);
+                        //    Print("Hedge Sell Close");
+                        //}
                         //if (((Positions.Find("Wave 0", Symbol, TradeType.Buy) == null)) && (position.SymbolCode == Symbol.Code) && (position.Label == "Wave 0"))
                         //{
                         //    ClosePosition(position);
