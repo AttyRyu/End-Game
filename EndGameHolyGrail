@@ -21,7 +21,7 @@ namespace cAlgo.Robots
         public int ATRH12Periods { get; set; }
 
 
-        [Parameter("ATR  H4 Period", DefaultValue = 60)]
+       [Parameter("ATR  H4 Period", DefaultValue = 60)]
         public int ATRH4Periods { get; set; }
 
 
@@ -114,7 +114,7 @@ namespace cAlgo.Robots
             MarketSeries D1Series;
             D1Series = MarketData.GetSeries(TimeFrame.Daily);
             double range_atr_d1 = 0;
-            double Ra_D1 = 0;
++            double Ra_D1 = 0;
             int RaP_D1 = atr_period;
             for (int i = 0; i < RaP_D1; i++)
             {
@@ -210,10 +210,10 @@ namespace cAlgo.Robots
             //END OF ATR Declarations
 
             //holy grail
-            if ((Positions.Find("", Symbol, TradeType.Buy) == null) && (Positions.Find("", Symbol, TradeType.Sell) == null) && (Positions.Find("Wave 0", Symbol, TradeType.Buy) == null) && (Positions.Find("Wave 0", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Sell) == null) && (Symbol.Spread / Symbol.PipSize < LimitRange / 2) && ((rsi.Result.LastValue >= 45) && (rsi.Result.LastValue <= 55)))
+            if ((Positions.Find("", Symbol, TradeType.Buy) == null) && (Positions.Find("", Symbol, TradeType.Sell) == null) && (Positions.Find("Wave 0", Symbol, TradeType.Buy) == null) && (Positions.Find("Wave 0", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear2", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear3", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear4", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear5", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear6", Symbol, TradeType.Sell) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Buy) == null) && (Positions.Find("Nuclear7", Symbol, TradeType.Sell) == null) && (Symbol.Spread / Symbol.PipSize < LimitRange / 2) && ((rsi.Result.LastValue >= 40) && (rsi.Result.LastValue <= 60)))
             {
-                ExecuteMarketOrderAsync(TradeType.Buy, Symbol, 1000, "Wave 0", StopLossInPips, TakeProfitInPips, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), null);
-                ExecuteMarketOrderAsync(TradeType.Sell, Symbol, 1000, "Wave 0", StopLossInPips, TakeProfitInPips, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), null);
+                //ExecuteMarketOrderAsync(TradeType.Buy, Symbol, 1000, "Wave 0", StopLossInPips, TakeProfitInPips, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), null);
+                //ExecuteMarketOrderAsync(TradeType.Sell, Symbol, 1000, "Wave 0", StopLossInPips, TakeProfitInPips, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), null);
                 CancelPendingOrders();
                 CreateWaves1(TradeType.Buy);
                 CreateWaves1(TradeType.Sell);
@@ -284,16 +284,16 @@ namespace cAlgo.Robots
                             Print("BackupClose and RSI equals " + rsi.Result.LastValue);
                         }
                         //wave 0
-                        if ((position.Pips >= (((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
-                        {
-                            ClosePosition(position);
-                            Print("Hedge Buy Close");
-                        }
-                        if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
-                        {
-                            ClosePosition(position);
-                            Print("Hedge Sell Close");
-                        }
+                       //if ((position.Pips >= (((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
+                       //{
+                       //    ClosePosition(position);
+                       //    Print("Hedge Buy Close");
+                       //}
+                       //if ((position.Pips <= ((((ATRh1period + (Math.Round(Symbol.Spread * 5))) * 3) - (ATRh1period / 2)) - Symbol.Spread) * -1) && (position.SymbolCode == Symbol.Code) && (Symbol.Spread < LimitRange / 2) && (position.Label == "Wave 0"))
+                       //{
+                       //    ClosePosition(position);
+                       //    Print("Hedge Sell Close");
+                       //}
                         //if (((Positions.Find("Wave 0", Symbol, TradeType.Buy) == null)) && (position.SymbolCode == Symbol.Code) && (position.Label == "Wave 0"))
                         //{
                         //    ClosePosition(position);
@@ -337,9 +337,12 @@ namespace cAlgo.Robots
             {
                 TargetPrice = type == TradeType.Buy ? TargetPrice + ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 5))) : TargetPrice - ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 3)));
                 //holy grail but ATR-based with no wave allowance
-                //TargetPrice1 = type == TradeType.Buy ? TargetPrice - ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 5))) : TargetPrice + ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 3)));
+                TargetPrice1 = type == TradeType.Buy ? TargetPrice - ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 5))) : TargetPrice + ((ATRh1period * Symbol.PipSize) + (Math.Round(Symbol.Spread * 3)));
+                PlaceStopLimitOrderAsync(type, Symbol, Volume, TargetPrice1, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), "", ATRd1period * 5, ATRh1period, null);
                 //end of holy grail but ATR-based with no wave allowance
-                PlaceStopLimitOrderAsync(type, Symbol, Volume, TargetPrice, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), "", ATRd1period * 5, ATRh1period, null);
+                //holy grail without wave 0
+                //PlaceStopLimitOrderAsync(type, Symbol, Volume, TargetPrice, (Math.Round(Symbol.Spread / Symbol.PipSize) * 5), "", ATRd1period * 5, ATRh1period, null);
+                //end of holy grail without wave 0
             }
             //End of ATR-based
         }
